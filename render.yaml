@@ -1,0 +1,38 @@
+services:
+  - type: cron
+    name: bca-bri-email-stock-bot-pagi
+    runtime: node
+    plan: starter
+    schedule: "0 8 * * 1-5"
+    buildCommand: "npm install"
+    startCommand: "npm start"
+    envVars:
+      - key: EMAIL_USER
+        sync: false
+      - key: EMAIL_PASS
+        sync: false
+      - key: RECEIVER_EMAIL
+        sync: false
+      - key: EMAIL_FROM_NAME
+        value: Bot Saham BBCA BBRI
+      - key: TIMEZONE
+        value: Asia/Jakarta
+
+  - type: cron
+    name: bca-bri-email-stock-bot-sore
+    runtime: node
+    plan: starter
+    schedule: "15 16 * * 1-5"
+    buildCommand: "npm install"
+    startCommand: "npm start"
+    envVars:
+      - key: EMAIL_USER
+        sync: false
+      - key: EMAIL_PASS
+        sync: false
+      - key: RECEIVER_EMAIL
+        sync: false
+      - key: EMAIL_FROM_NAME
+        value: Bot Saham BBCA BBRI
+      - key: TIMEZONE
+        value: Asia/Jakarta
