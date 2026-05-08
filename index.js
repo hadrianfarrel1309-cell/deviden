@@ -1,3 +1,4 @@
+import Parser from "rss-parser";
 import express from "express";
 import fs from "fs";
 
@@ -9,6 +10,8 @@ const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 const TIMEZONE = process.env.TIMEZONE || "Asia/Jakarta";
 
 const sentReminders = new Set();
+const parser = new Parser();
+const sentDividendLinks = new Set();
 
 function loadDividends() {
   return JSON.parse(fs.readFileSync("./dividends.json", "utf-8"));
@@ -158,13 +161,88 @@ async function checkDividendReminder() {
   }
 }
 
+function dividendNewsSources() {
+  return [
+    "https://www.cnbcindonesia.com/market/rss"
+  ];
+}
+
+function extractDividendInfo(title = "") {
+  const text = title.toLowerCase();
+
+  const valid =
+    text.includes("dividen") ||
+    text.includes("cum date") ||
+    text.includes("ex date");
+
+  if (!valid) return null;
+
+  let symbol = "SAHAM";
+
+  if (text.includes("bbca") || text.includes("bca")) {
+    symbol = "BBCA";
+  }
+
+  if (text.includes("bbri") || text.includes("bri")) {
+    symbol = "BBRI";
+  }
+
+  return {
+    symbol
+  };
+}
+
+async function checkDividendNews() {
+  console.log(`[${nowText()}] Cek berita dividen...`);
+
+  for (const source of dividendNewsSources()) {
+    try {
+      const feed = await parser.parseURL(source);
+      const items = feed.items || [];
+
+      for (const item of items.slice(0, 10)) {
+        const title = item.title || "";
+        const link = item.link || "";
+
+        if (!title || !link) continue;
+
+        if (sentDividendLinks.has(link)) continue;
+
+        const info = extractDividendInfo(title);
+
+        if (!info) continue;
+
+        sentDividendLinks.add(link);
+
+        const message = `💰 UPDATE DIVIDEN ${info.symbol}
+
+${title}
+
+Sumber:
+${link}
+
+⏰ ${nowText()}`;
+
+        await sendTelegram(message);
+
+        console.log(`Dividen terkirim: ${title}`);
+
+        await new Promise((r) => setTimeout(r, 3000));
+      }
+    } catch (err) {
+      console.log(`Gagal cek dividen RSS: ${err.message}`);
+    }
+  }
+}
+
 app.get("/", (req, res) => {
   res.send("Dividend Alert Bot aktif");
 });
 
 app.get("/test", async (req, res) => {
   try {
-    await sendStartupMessage();
+    await sendTelegram(`✅ Test Dividend Bot\n⏰ ${nowText()}`);
+
     res.send("Test dividen terkirim");
   } catch (err) {
     res.status(500).send(err.message);
@@ -179,13 +257,12 @@ app.listen(PORT, async () => {
     process.exit(0);
   }
 
-  try {
-    await sendStartupMessage();
-  } catch (err) {
-    console.log(`Gagal startup message: ${err.message}`);
-  }
 
-  await checkDividendReminder();
+await checkDividendReminder();
+await checkDividendNews();
 
-  setInterval(checkDividendReminder, 60 * 60 * 1000);
+setInterval(checkDividendReminder, 24 * 60 * 60 * 1000);
+
+// cek berita dividen tiap 24 jam
+setInterval(checkDividendNews, 24 * 60 * 60 * 1000);
 });
