@@ -1,0 +1,12 @@
+{
+  "name": "dividend-alert-bot",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js",
+    "test": "node index.js test"
+  },
+  "dependencies": {
+    "express": "^4.21.2"
+  }
+}
