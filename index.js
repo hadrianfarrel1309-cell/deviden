@@ -252,10 +252,10 @@ app.get("/test", async (req, res) => {
 app.listen(PORT, async () => {
   console.log(`Dividend bot jalan di port ${PORT}`);
 
-  if (process.argv.includes("test")) {
-    await sendStartupMessage();
-    process.exit(0);
-  }
+if (process.argv.includes("test")) {
+  await sendTelegram(`✅ Test Dividend Bot\n⏰ ${nowText()}`);
+  process.exit(0);
+}
 
 
 await checkDividendReminder();
