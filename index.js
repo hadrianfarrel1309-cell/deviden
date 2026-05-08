@@ -193,6 +193,43 @@ function extractDividendInfo(title = "") {
   };
 }
 
+async function fetchArticleText(url) {
+  try {
+    const res = await fetch(url, {
+      headers: {
+        "User-Agent": "Mozilla/5.0"
+      }
+    });
+
+    const html = await res.text();
+
+    const $ = cheerio.load(html);
+
+    return $("body").text();
+  } catch (err) {
+    console.log(`Gagal fetch artikel: ${err.message}`);
+    return "";
+  }
+}
+
+function parseDividendDetail(text = "") {
+  const clean = text.replace(/\s+/g, " ");
+
+  const dividend =
+    clean.match(/Rp\s?[\d.,]+/i)?.[0] || "-";
+
+  const dateMatches =
+    clean.match(/\d{1,2}\s(?:Jan|Feb|Mar|Apr|Mei|Jun|Jul|Agu|Sep|Okt|Nov|Des)\s\d{4}/gi) || [];
+
+  return {
+    dividend,
+    cumDate: dateMatches[0] || "-",
+    exDate: dateMatches[1] || "-",
+    recordingDate: dateMatches[2] || "-",
+    paymentDate: dateMatches[3] || "-"
+  };
+}
+
 async function checkDividendNews() {
   console.log(`[${nowText()}] Cek berita dividen...`);
 
@@ -215,15 +252,22 @@ async function checkDividendNews() {
 
         sentDividendLinks.add(link);
 
-        const message = `💰 UPDATE DIVIDEN ${info.symbol}
+  const articleText = await fetchArticleText(link);
 
-${title}
+const detail = parseDividendDetail(articleText);
+
+const message = `💰 UPDATE DIVIDEN ${info.symbol}
+
+Dividen: ${detail.dividend} / saham
+Cum Date: ${detail.cumDate}
+Ex Date: ${detail.exDate}
+Tanggal Pencatatan: ${detail.recordingDate}
+Tanggal Pembayaran: ${detail.paymentDate}
 
 Sumber:
 ${link}
 
 ⏰ ${nowText()}`;
-
         await sendTelegram(message);
 
         console.log(`Dividen terkirim: ${title}`);
