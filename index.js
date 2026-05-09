@@ -294,20 +294,32 @@ app.get("/test", async (req, res) => {
   }
 });
 
+app.get("/keepalive", (req, res) => {
+  console.log(`[${nowText()}] Keep alive ping`);
+  res.send("OK");
+});
+
+function keepAliveLog() {
+  console.log(`[${nowText()}] Bot masih hidup`);
+}
+
 app.listen(PORT, async () => {
   console.log(`Dividend bot jalan di port ${PORT}`);
 
-if (process.argv.includes("test")) {
-  await sendTelegram(`✅ Test Dividend Bot\n⏰ ${nowText()}`);
-  process.exit(0);
-}
+  if (process.argv.includes("test")) {
+    await sendTelegram(`✅ Test Dividend Bot\n⏰ ${nowText()}`);
+    process.exit(0);
+  }
 
+  await checkDividendReminder();
+  await checkDividendNews();
 
-await checkDividendReminder();
-await checkDividendNews();
+  setInterval(checkDividendReminder, 24 * 60 * 60 * 1000);
 
-setInterval(checkDividendReminder, 24 * 60 * 60 * 1000);
+  // cek berita dividen tiap 24 jam
+  setInterval(checkDividendNews, 24 * 60 * 60 * 1000);
 
-// cek berita dividen tiap 24 jam
-setInterval(checkDividendNews, 24 * 60 * 60 * 1000);
+  // log tiap 3 jam
+  keepAliveLog();
+  setInterval(keepAliveLog, 3 * 60 * 60 * 1000);
 });
