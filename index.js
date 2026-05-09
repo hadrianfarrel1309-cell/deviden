@@ -168,6 +168,23 @@ function dividendNewsSources() {
   ];
 }
 
+function marketInfluencers() {
+  return [
+    {
+      name: "Watcher Guru",
+      rss: "https://nitter.net/WatcherGuru/rss"
+    },
+    {
+      name: "CoinDesk",
+      rss: "https://nitter.net/CoinDesk/rss"
+    },
+    {
+      name: "CNBC Indonesia",
+      rss: "https://nitter.net/CNBCIndonesia/rss"
+    }
+  ];
+}
+
 function extractDividendInfo(title = "") {
   const text = title.toLowerCase();
 
@@ -191,6 +208,64 @@ function extractDividendInfo(title = "") {
   return {
     symbol
   };
+}
+
+function detectSentiment(text = "") {
+  const t = text.toLowerCase();
+
+  const bullishWords = [
+    "bullish",
+    "buy",
+    "rebound",
+    "breakout",
+    "naik",
+    "menguat",
+    "all time high"
+  ];
+
+  const bearishWords = [
+    "bearish",
+    "sell",
+    "dump",
+    "crash",
+    "turun",
+    "melemah",
+    "koreksi"
+  ];
+
+  let bullish = 0;
+  let bearish = 0;
+
+  bullishWords.forEach((w) => {
+    if (t.includes(w)) bullish++;
+  });
+
+  bearishWords.forEach((w) => {
+    if (t.includes(w)) bearish++;
+  });
+
+  if (bullish > bearish) return "BULLISH 📈";
+  if (bearish > bullish) return "BEARISH 📉";
+
+  return "NEUTRAL";
+}
+
+function detectAsset(text = "") {
+  const t = text.toLowerCase();
+
+  if (t.includes("bbca") || t.includes("bca")) {
+    return "BBCA";
+  }
+
+  if (t.includes("bbri") || t.includes("bri")) {
+    return "BBRI";
+  }
+
+  if (t.includes("bitcoin") || t.includes("btc")) {
+    return "BITCOIN";
+  }
+
+  return null;
 }
 
 async function fetchArticleText(url) {
@@ -280,6 +355,57 @@ ${link}
   }
 }
 
+async function checkMarketSentiment() {
+  console.log(`[${nowText()}] Cek market sentiment...`);
+
+  for (const source of marketInfluencers()) {
+    try {
+      const feed = await parser.parseURL(source.rss);
+
+      const items = feed.items || [];
+
+      for (const item of items.slice(0, 5)) {
+        const title = item.title || "";
+        const link = item.link || "";
+
+        if (!title || !link) continue;
+
+        if (sentDividendLinks.has(link)) continue;
+
+        const asset = detectAsset(title);
+
+        if (!asset) continue;
+
+        sentDividendLinks.add(link);
+
+        const sentiment = detectSentiment(title);
+
+        const message = `📊 MARKET SENTIMENT
+
+Asset: ${asset}
+Sumber: ${source.name}
+
+${title}
+
+Sentimen: ${sentiment}
+
+Link:
+${link}
+
+⏰ ${nowText()}`;
+
+        await sendTelegram(message);
+
+        console.log(`Sentiment terkirim: ${title}`);
+
+        await new Promise((r) => setTimeout(r, 3000));
+      }
+    } catch (err) {
+      console.log(`Gagal cek sentiment: ${err.message}`);
+    }
+  }
+}
+
 app.get("/", (req, res) => {
   res.send("Dividend Alert Bot aktif");
 });
@@ -303,6 +429,15 @@ function keepAliveLog() {
   console.log(`[${nowText()}] Bot masih hidup`);
 }
 
+app.get("/test-sentiment", async (req, res) => {
+  try {
+    await checkMarketSentiment();
+    res.send("Test sentiment selesai, cek Telegram / Render log");
+  } catch (err) {
+    res.status(500).send(err.message);
+  }
+});
+
 app.listen(PORT, async () => {
   console.log(`Dividend bot jalan di port ${PORT}`);
 
@@ -313,12 +448,15 @@ app.listen(PORT, async () => {
 
   await checkDividendReminder();
   await checkDividendNews();
-
+  await checkMarketSentiment();
+  
   setInterval(checkDividendReminder, 24 * 60 * 60 * 1000);
 
   // cek berita dividen tiap 24 jam
   setInterval(checkDividendNews, 24 * 60 * 60 * 1000);
-
+  
+// cek sentiment tiap 30 menit
+setInterval(checkMarketSentiment, 30 * 60 * 1000);
   // log tiap 3 jam
   keepAliveLog();
   setInterval(keepAliveLog, 3 * 60 * 60 * 1000);
