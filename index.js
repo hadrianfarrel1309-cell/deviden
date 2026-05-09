@@ -171,8 +171,8 @@ function dividendNewsSources() {
 function marketInfluencers() {
   return [
     {
-      name: "theblock",
-      rss: "https://www.theblock.co/rss.xml"
+      name: "blockworks",
+      rss: "https://blockworks.co/feed"
     },
     {
       name: "decrypt",
