@@ -171,16 +171,16 @@ function dividendNewsSources() {
 function marketInfluencers() {
   return [
     {
-      name: "Watcher Guru",
-      rss: "https://nitter.net/WatcherGuru/rss"
+      name: "Cointelegraph",
+      rss: "https://cointelegraph.com/rss"
     },
     {
       name: "CoinDesk",
-      rss: "https://nitter.net/CoinDesk/rss"
+      rss: "https://www.coindesk.com/arc/outboundfeeds/rss/"
     },
     {
-      name: "CNBC Indonesia",
-      rss: "https://nitter.net/CNBCIndonesia/rss"
+      name: "CNBC Indonesia Market",
+      rss: "https://www.cnbcindonesia.com/market/rss"
     }
   ];
 }
