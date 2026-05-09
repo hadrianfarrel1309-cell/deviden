@@ -171,16 +171,16 @@ function dividendNewsSources() {
 function marketInfluencers() {
   return [
     {
-      name: "Cointelegraph",
-      rss: "https://cointelegraph.com/rss"
+      name: "theblock",
+      rss: "https://www.theblock.co/rss.xml"
     },
     {
-      name: "CoinDesk",
-      rss: "https://www.coindesk.com/arc/outboundfeeds/rss/"
+      name: "decrypt",
+      rss: "https://decrypt.co/feed"
     },
     {
-      name: "CNBC Indonesia Market",
-      rss: "https://www.cnbcindonesia.com/market/rss"
+      name: "bitcoinmagazine",
+      rss: "https://bitcoinmagazine.com/.rss/full/"
     }
   ];
 }
